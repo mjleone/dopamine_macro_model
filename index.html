@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dopamine pathways: a working model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --up:#1B9E77;--down:#D95F02;
+  --drug:#C2417F;
+  --paper:#EBEFF2;--plate:#F9FAFB;--tissue:#F0F3F6;--ink:#1C2633;--ink2:#4D5A6B;--rule:#CBD2DA;
+  --outline:#8C97A5;--source:#2C6FB7;--target:#5A4C9E;--signal:#E09A16;--neutral:#DCE1E7;--low:#86A3CB;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --up:#3FC9A0;--down:#F2873A;
+    --drug:#E77BB0;
+    --paper:#151A21;--plate:#1E242D;--tissue:#252C36;--ink:#E3E7EC;--ink2:#A2ACB9;--rule:#36404C;
+    --outline:#6F7B8A;--source:#78AEEA;--target:#A193E6;--signal:#F0B43C;--neutral:#3A434F;--low:#46679A;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-size:16px;line-height:1.5}
+header{margin:0 auto;padding:28px 24px 4px}
+h1{font-family:"Newsreader",Georgia,serif;font-weight:500;font-size:2.5rem;line-height:1.1;margin:0 0 8px;letter-spacing:-0.01em}
+header p{margin:0;color:var(--ink2);max-width:70ch}
+h2{font-family:"Newsreader",Georgia,serif;font-weight:500;font-size:1.3rem;line-height:1.25;margin:0 0 6px}
+h3{font-family:"Newsreader",Georgia,serif;font-weight:500;font-size:1.1rem;margin:18px 0 4px}
+.wrap{max-width:1400px;margin:0 auto;padding:0 24px 16px}
+header{max-width:1400px}
+.scenbar{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:10px 28px;align-items:start;margin:12px 0 0}
+.scenbar .caption{margin:0;min-height:4.6em;align-self:center;max-width:75ch}
+.scenctl .controls{margin-top:8px}
+.scenctl .clock{margin-left:6px}
+.views{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+.loops{display:grid;gap:12px}
+.loopkey{margin:0}
+@media (max-width:1000px){.views{grid-template-columns:1fr}.scenbar{grid-template-columns:1fr}}
+.effects{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 24px}
+@media (max-width:900px){.effects{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.effects{grid-template-columns:1fr}}
+dialog{max-width:560px;width:calc(100% - 32px);border:1px solid var(--rule);border-radius:8px;background:var(--plate);color:var(--ink);padding:20px 22px}
+dialog::backdrop{background:rgba(20,26,33,.35);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.dlghead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.dlghead h2{font-size:1.6rem;margin:0 0 4px}
+dialog p{margin:0 0 10px}
+.pwinfo{border-left:3px solid var(--rule);padding-left:10px;margin:0 0 10px}
+.pwinfo b{font-weight:700}
+figure{margin:0;background:var(--plate);border:1px solid var(--rule);border-radius:6px;padding:12px 14px}
+figcaption{font-family:"Newsreader",Georgia,serif;font-style:italic;color:var(--ink2);font-size:1rem;line-height:1.4;margin-top:6px}
+svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 22px;font-family:"Atkinson Hyperlegible",sans-serif;font-style:normal;font-size:0.85rem;color:var(--ink2);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend svg{width:auto;display:inline-block}
+.scale{width:96px;height:12px;border-radius:2px;border:1px solid var(--outline);background:linear-gradient(90deg,var(--down),var(--tissue),var(--up))}
+.block{background:var(--plate);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;margin-bottom:14px}
+label.field{display:block;font-size:0.9rem;color:var(--ink2);margin-bottom:4px}
+select,button{font:inherit;color:var(--ink);background:var(--tissue);border:1px solid var(--outline);border-radius:5px}
+select{width:100%;padding:8px 10px}
+button{padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--ink2)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--plate);border-color:var(--ink)}
+:focus-visible{outline:2px solid var(--target);outline-offset:2px}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+input[type=range]{width:100%;margin:12px 0 2px;accent-color:var(--target)}
+.clock{font-size:0.9rem;color:var(--ink2)}
+.caption{font-family:"Newsreader",Georgia,serif;font-size:1.12rem;line-height:1.5;margin:12px 0 0;min-height:7.5em}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 18px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--rule)}
+.pwbtns{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pwbtns button{padding:5px 10px;font-size:0.92rem}
+.tlabel{font-size:0.9rem;color:var(--ink2);margin-right:2px}
+.reg.dim{opacity:.22}
+.meta{color:var(--ink2);font-size:0.92rem;margin:0 0 8px}
+.reading{font-size:0.92rem;border-top:1px solid var(--rule);padding-top:8px;margin-top:4px}
+.effects{display:grid;gap:9px}
+.eff{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:0.92rem;align-items:baseline}
+.eff .val{font-variant-numeric:tabular-nums;color:var(--ink2)}
+.track{grid-column:1/3;position:relative;height:6px;background:var(--rule);border-radius:3px;overflow:hidden}
+.fill{position:absolute;left:0;top:0;bottom:0;background:var(--ink2);border-radius:3px}
+.tick{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);left:33.3%}
+.layers{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:0.92rem}
+.layers label{display:flex;gap:7px;align-items:center;cursor:pointer}
+.layers input{accent-color:var(--target);width:16px;height:16px}
+.about{max-width:1400px;margin:0 auto;padding:12px 24px 0}
+.about details{background:var(--plate);border:1px solid var(--rule);border-radius:6px;padding:12px 16px}
+.about summary{cursor:pointer;font-family:"Newsreader",Georgia,serif;font-size:1.25rem}
+.about .cols{columns:2 340px;column-gap:36px}
+.about .cols>div{break-inside:avoid;margin-bottom:10px}
+.about p{margin:0 0 10px;max-width:70ch}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.tissue{fill:var(--tissue);stroke:var(--outline);stroke-width:1.2}
+.cc{fill:none;stroke:var(--rule);stroke-width:8;stroke-linecap:round}
+.pw{fill:none;stroke-linecap:round}
+.pwhit{fill:none;stroke:transparent;stroke-width:12;cursor:pointer;pointer-events:stroke}
+#pulses{pointer-events:none}
+.pulse{fill:var(--signal)}
+.rshape{stroke-width:1.6;transition:stroke-width .15s}
+.rshape.source{stroke:var(--source)}
+.rshape.target{stroke:var(--target)}
+.reg{cursor:pointer}
+.reg:focus{outline:none}
+.reg:focus-visible .rshape{stroke-width:3.6}
+.reg.sel .rshape{stroke-width:3.2}
+.rl{font-family:"Atkinson Hyperlegible",sans-serif;font-size:12px;pointer-events:none}
+.pwl{font-family:"Newsreader",Georgia,serif;font-style:italic;font-size:14px;fill:var(--ink2);cursor:pointer}
+.pwl:hover{fill:var(--ink)}
+.halo{fill:none;stroke:var(--drug);stroke-width:3}
+#halos{pointer-events:none}
+.drugtag{display:flex;gap:10px;align-items:flex-start;font-size:0.92rem;margin:0 0 6px;padding:8px 10px;border:1.5px solid var(--drug);border-radius:6px;background:var(--tissue)}
+.drugtag b{font-weight:700}
+.drugtag svg{width:26px;height:18px}
+.drugtag[hidden]{display:none}
+.brainwrap{position:relative}
+.eventtag{position:absolute;right:2%;top:3%;font-family:"Newsreader",Georgia,serif;font-size:1.3rem;padding:4px 14px;border:1.5px solid var(--ink);border-radius:6px;background:var(--plate)}
+.eventtag[hidden]{display:none}
+.nolabels .rl{display:none}
+.hide-meso_l [data-pw="meso_l"],.hide-meso_c [data-pw="meso_c"],.hide-nigro [data-pw="nigro"],.hide-tubero [data-pw="tubero"]{display:none}
+.mbox{fill:var(--tissue);stroke:var(--outline);stroke-width:1}
+.mt{font-family:"Atkinson Hyperlegible",sans-serif;font-size:17px;fill:var(--ink)}
+.ms{font-family:"Atkinson Hyperlegible",sans-serif;font-size:13px;fill:var(--ink2)}
+.mtrack{fill:var(--rule)}
+.mbar{fill:var(--ink2)}
+.mtick{fill:var(--ink)}
+.conn{fill:none;stroke:var(--ink2);stroke-width:1.5}
+.rowlab{font-family:"Newsreader",Georgia,serif;font-style:italic;font-size:17px;fill:var(--ink2)}
+.msum{font-family:"Newsreader",Georgia,serif;font-size:1.08rem;margin:6px 0 0;max-width:70ch}
+</style>
+</head>
+<body>
+<header>
+  <h1>Dopamine pathways</h1>
+  <p>A working model of the brain's four main dopamine pathways, from the midbrain and hypothalamus to their targets. Choose a scenario and press play. Click any region to pause and read about it.</p>
+</header>
+
+<section class="about">
+  <details>
+    <summary>About this model</summary>
+    <div class="cols">
+      <div>
+        <h3>How it works</h3>
+        <p>Each dopamine source fires at a rate set by the scenario: a slow, regular tonic rhythm by default, with bursts and pauses where the scenario calls for them. Dopamine in each target is computed from recent firing, the share of surviving neurons, and any drug effects on synthesis, breakdown, reuptake and release.</p>
+        <p>Line thickness shows how much dopamine each pathway delivers, from firing, surviving neurons and disease changes. D1 and D2 signaling follow the dopamine level, changed further by drugs acting on terminals and receptors. Region color shows overall dopamine signaling, weighted by each region's mix of D1 and D2 receptors. The basal ganglia loops and the effects readouts are all computed from those signals, so every panel stays consistent with the brain view.</p>
+      </div>
+      <div>
+        <h3>Limitations</h3>
+        <p>Dopamine is reduced to one number per region. Synapse-level details such as transporter kinetics, receptor binding and autoreceptor feedback are left out, except where a scenario describes them.</p>
+        <p>Firing is treated as the only driver of release. In reality, local circuits in the striatum, especially cholinergic interneurons, can trigger or shape release at the axon terminals independently of firing at the cell bodies.</p>
+        <p>Distances from the midline are approximate adult human values for a schematic, not atlas measurements. All numbers are relative to baseline and are illustrative, not quantitative predictions. Compensation in early Parkinson's disease is modeled simply, as surviving neurons releasing extra dopamine.</p>
+      </div>
+      <div>
+        <h3>Not included</h3>
+        <p>Minor dopamine systems are left out: the hypothalamospinal projection (linked to restless legs syndrome), the incertohypothalamic system, and dopamine cells in the retina and olfactory bulb.</p>
+        <p>D2-blocking anti-nausea drugs such as metoclopramide act in the area postrema, a brainstem region outside the blood-brain barrier. It is a receptor site rather than a dopamine pathway, so it is mentioned but not drawn.</p>
+      </div>
+      <div>
+        <h3>Ideas the model simplifies</h3>
+        <p>Reward prediction error is the leading account of phasic dopamine signals, but not the only one. Dopamine neurons also respond to novelty and salience, some respond to aversive events, and incentive salience theory describes dopamine as "wanting" rather than learning.</p>
+        <p>All atypical antipsychotics are modeled as one drug: 70 percent D2 occupancy plus 5-HT2A blockade, with the extra dopamine release applied only to the putamen and prefrontal cortex. Partial agonists such as aripiprazole are not simulated. The motor loop tolerates D2 blockade up to about 70 to 80 percent occupancy, matching the clinical threshold for motor side effects, while the other targets respond in proportion. D2 supersensitivity in the tardive dyskinesia scenario is limited to the striatum.</p>
+        <p>The classic schizophrenia hypothesis (high mesolimbic, low mesocortical dopamine) is shown alongside its modern refinement from PET imaging, which places the largest dopamine excess in the associative part of the dorsal striatum.</p>
+      </div>
+    </div>
+  </details>
+</section>
+
+
+<section class="wrap" aria-label="Scenario">
+  <div class="block scenbar">
+    <div class="scenctl">
+      <label class="field" for="scenario">Scenario</label>
+      <select id="scenario"></select>
+      <div class="controls">
+        <button id="play" type="button">Play</button>
+        <button id="restart" type="button">Restart</button>
+        <span class="clock" id="clock"></span>
+      </div>
+      <input id="scrub" type="range" min="0" max="10" step="0.01" value="0" aria-label="Scenario time">
+    </div>
+    <p class="caption" id="caption" aria-live="polite"></p>
+  </div>
+</section>
+
+<main class="wrap views">
+    <figure class="plate">
+      <div class="toolbar">
+        <div class="pwbtns" role="group" aria-label="Show one pathway">
+          <span class="tlabel">Show pathway</span>
+          <button type="button" data-focus="meso_l" aria-pressed="false">Mesolimbic</button>
+          <button type="button" data-focus="meso_c" aria-pressed="false">Mesocortical</button>
+          <button type="button" data-focus="nigro" aria-pressed="false">Nigrostriatal</button>
+          <button type="button" data-focus="tubero" aria-pressed="false">Tuberoinfundibular</button>
+          <button type="button" id="showAll">Show all</button>
+        </div>
+        <div class="layers">
+          <label><input type="checkbox" data-layer="labels" checked>Region labels</label>
+          <label><input type="checkbox" data-layer="motor" checked>Basal ganglia loops</label>
+        </div>
+      </div>
+      <div class="drugtag" id="drugTag" hidden aria-live="polite"><svg viewBox="0 0 26 18" width="26" height="18" aria-hidden="true" style="flex:none;margin-top:2px"><ellipse cx="13" cy="9" rx="10" ry="6" fill="none" style="stroke:var(--drug)" stroke-width="3"/></svg><span id="drugText"></span></div>
+      <div class="brainwrap">
+      <div class="eventtag" id="eventTag" hidden aria-live="polite"></div>
+      <svg id="brain" viewBox="90 62 620 368" role="img" aria-labelledby="brainTitle brainDesc">
+        <title id="brainTitle">Sagittal schematic of dopamine pathways</title>
+        <desc id="brainDesc">A side view of the brain, front to the left, showing dopamine source regions, their target regions and the pathways between them. Fill color shows whether dopamine signaling in each region is below, at or above typical levels, line thickness shows how much dopamine each pathway delivers, and outline style shows distance from the midline.</desc>
+        <path class="tissue" d="M478 325 C486 365 492 400 494 445 L530 445 C528 400 526 362 522 325 Z"/>
+        <ellipse class="tissue" cx="592" cy="372" rx="72" ry="42"/>
+        <path class="tissue" d="M120 295 C100 190 170 92 310 80 C460 68 615 105 668 200 C692 252 676 310 632 330 C590 346 545 338 515 330 C500 360 470 372 430 372 C360 374 300 362 270 345 C240 360 200 362 175 345 C140 330 125 315 120 295 Z"/>
+        <path class="cc" d="M255 200 C300 150 480 148 545 205"/>
+        <g id="paths"></g>
+        <g id="pulses"></g>
+        <g id="halos"></g>
+        <g id="regions"></g>
+        <g id="pwlabels">
+          <text class="pwl" data-pw="meso_c" x="365" y="136" text-anchor="middle">mesocortical</text>
+          <text class="pwl" data-pw="nigro" x="482" y="203" text-anchor="middle">nigrostriatal</text>
+          <text class="pwl" data-pw="meso_l" x="290" y="247" text-anchor="middle">mesolimbic</text>
+          <text class="pwl" data-pw="tubero" x="342" y="404" text-anchor="start">tuberoinfundibular</text>
+        </g>
+      </svg>
+      </div>
+      <figcaption>
+        Schematic projection: structures from different depths are flattened onto one side view, front to the left. It is not a single anatomical slice.
+        <div class="legend" aria-label="Legend">
+          <span><span class="scale" aria-hidden="true"></span>Region color: less active, typical, more active</span>
+          <span><svg viewBox="0 0 60 14" width="60" height="14" aria-hidden="true"><line x1="2" y1="7" x2="18" y2="7" style="stroke:var(--ink2)" stroke-width="0.6" opacity=".4"/><line x1="22" y1="7" x2="38" y2="7" style="stroke:var(--ink2)" stroke-width="1.4"/><line x1="42" y1="7" x2="58" y2="7" style="stroke:var(--ink2)" stroke-width="4" stroke-linecap="round"/></svg>Line thickness: dopamine a pathway delivers</span>
+          <span><svg viewBox="0 0 26 18" width="26" height="18" aria-hidden="true"><ellipse cx="13" cy="9" rx="10" ry="6" fill="none" style="stroke:var(--drug)" stroke-width="3"/></svg>Drug acting in this region</span>
+          <span><svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="2.8" style="fill:var(--signal)"/></svg>Spike traveling down a pathway</span>
+          <span><svg viewBox="0 0 26 14" width="26" height="14" aria-hidden="true"><ellipse cx="13" cy="7" rx="11" ry="6" fill="none" style="stroke:var(--source)" stroke-width="1.8"/></svg>Dopamine source</span>
+          <span><svg viewBox="0 0 26 14" width="26" height="14" aria-hidden="true"><ellipse cx="13" cy="7" rx="11" ry="6" fill="none" style="stroke:var(--target)" stroke-width="1.8"/></svg>Target</span>
+          <span><svg viewBox="0 0 92 14" width="92" height="14" aria-hidden="true"><ellipse cx="14" cy="7" rx="11" ry="5.5" fill="none" style="stroke:var(--ink2)" stroke-width="1.6"/><ellipse cx="46" cy="7" rx="11" ry="5.5" fill="none" style="stroke:var(--ink2)" stroke-width="1.6" stroke-dasharray="6 4"/><ellipse cx="78" cy="7" rx="11" ry="5.5" fill="none" style="stroke:var(--ink2)" stroke-width="1.6" stroke-dasharray="1.5 4"/></svg>Outline: midline (0–5 mm), near midline (5–15 mm), lateral (15+ mm)</span>
+        </div>
+      </figcaption>
+    </figure>
+    <div class="loops">
+      <p class="meta loopkey">Colors use the same scale as the brain. Arrows excite; flat ends inhibit.</p>
+      <figure id="cogfig" hidden>
+          <svg id="cog" viewBox="0 0 580 300" role="img" aria-label="Basal ganglia thinking loop through the caudate"></svg>
+          <p class="msum" id="cogSum" aria-live="polite"></p>
+          <figcaption>Thinking loop through the caudate, the associative striatum, which connects with prefrontal cortex. Same design as the motor loop, but it gates thoughts and plans instead of movements.</figcaption>
+      </figure>
+      <figure id="motorfig">
+          <svg id="motor" viewBox="0 0 580 300" role="img" aria-label="Basal ganglia motor circuit"></svg>
+          <p class="msum" id="motorSum" aria-live="polite"></p>
+          <figcaption>Motor loop through the putamen. The caudate repeats this design in a thinking loop. The nucleus accumbens has a similar motivation loop through the ventral pallidum, with a less clear direct and indirect split.</figcaption>
+      </figure>
+    </div>
+</main>
+
+<section class="wrap" aria-label="Effects" style="padding-bottom:40px">
+  <div class="block">
+    <h2>Effects</h2>
+      <div class="effects">
+        <div class="eff"><span>Reward signal (nucleus accumbens)</span><span class="val" id="vReward"></span><div class="track"><div class="fill" id="bReward"></div><div class="tick"></div></div></div>
+        <div class="eff"><span>Movement drive</span><span class="val" id="vMove"></span><div class="track"><div class="fill" id="bMove"></div><div class="tick"></div></div></div>
+        <div class="eff"><span>Working memory</span><span class="val" id="vWM"></span><div class="track"><div class="fill" id="bWM"></div></div></div>
+        <div class="eff"><span>Prolactin release</span><span class="val" id="vPrl"></span><div class="track"><div class="fill" id="bPrl"></div><div class="tick"></div></div></div>
+      </div>
+  </div>
+</section>
+
+<dialog id="regionDlg" aria-labelledby="dlgName">
+  <div class="dlghead">
+    <h2 id="dlgName"></h2>
+    <button type="button" id="dlgClose" >Close</button>
+  </div>
+  <p class="meta" id="dlgMeta"></p>
+  <p id="dlgRole"></p>
+  <p id="dlgRec"></p>
+  <div id="dlgPw"></div>
+  <p class="reading" id="dlgReading"></p>
+</dialog>
+
+
+
+<script>
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ramp=(t,a,b,v0,v1)=>t<=a?v0:t>=b?v1:v0+(v1-v0)*(t-a)/(b-a);
+const TONIC={vta:4,snc:4,arc:3};
+const SOURCES=['vta','snc','arc'];
+const TRAVEL=1.8;
+
+const PW={
+  meso_l:{name:'Mesolimbic pathway',route:'Ventral tegmental area to the nucleus accumbens, with branches to the amygdala, hippocampus and olfactory tubercle.',role:'supports reward, motivation and learning from prediction errors (via the nucleus accumbens and the pathway\'s other targets). In the classic schizophrenia hypothesis, overactivity here causes positive symptoms such as hallucinations and delusions (via the nucleus accumbens). It is also where stimulant drugs have their rewarding effects (via the nucleus accumbens).',ids:['vta','nac','olf','amy','hip']},
+  meso_c:{name:'Mesocortical pathway',route:'Ventral tegmental area to the medial and dorsolateral prefrontal cortex.',role:'supports working memory, attention and planning (via the dorsolateral prefrontal cortex) and decision-making and emotional regulation (via the medial prefrontal cortex). In the classic schizophrenia hypothesis, underactivity here is linked to negative symptoms (mainly via the medial prefrontal cortex) and cognitive symptoms (mainly via the dorsolateral prefrontal cortex).',ids:['vta','mpfc','dlpfc']},
+  nigro:{name:'Nigrostriatal pathway',route:'Substantia nigra pars compacta to the dorsal striatum (caudate and putamen).',role:'selects and starts movements (via the putamen) and gates thoughts and plans (via the caudate). Its loss in Parkinson\'s disease causes the motor symptoms (via the putamen) and contributes to some cognitive symptoms (via the caudate). PET studies of schizophrenia find the largest dopamine excess among its targets (in the caudate). Blocking its D2 receptors causes the motor side effects of antipsychotics (via the putamen).',ids:['snc','caud','put']},
+  tubero:{name:'Tuberoinfundibular pathway',route:'Arcuate nucleus of the hypothalamus to the median eminence, then through portal blood to the anterior pituitary.',role:'holds back prolactin release (via D2 receptors on the anterior pituitary\'s lactotroph cells). Blocking those receptors, as antipsychotics do, raises prolactin (via the anterior pituitary).',ids:['arc','pit']}
+};
+
+const REG={
+  vta:{name:'Ventral tegmental area',short:'VTA',cx:450,cy:300,rx:20,ry:11,mm:3,type:'source',pws:['meso_l','meso_c'],
+    role:'A midbrain cluster of dopamine neurons beside the midline. It is the source of the mesolimbic and mesocortical pathways, and its bursts and pauses carry reward prediction error signals.',
+    rec:'D2 autoreceptors on its own neurons sense released dopamine and slow firing.'},
+  snc:{name:'Substantia nigra pars compacta',short:'SNc',cx:496,cy:278,rx:22,ry:11,mm:11,type:'source',pws:['nigro'],
+    role:'Dopamine neurons just lateral to the VTA that project to the dorsal striatum. They degenerate in Parkinson\'s disease.',
+    rec:'D2 autoreceptors provide the same feedback as in the VTA.'},
+  arc:{name:'Arcuate nucleus (hypothalamus)',short:'Arcuate',cx:318,cy:300,rx:26,ry:11,mm:2,type:'source',pws:['tubero'],
+    role:'Hypothalamic neurons that release dopamine at the median eminence, where it enters portal blood and travels to the anterior pituitary.',
+    rec:'Their activity rises when prolactin rises, a feedback loop that keeps prolactin in check.'},
+  nac:{name:'Nucleus accumbens',short:'NAc',cx:268,cy:272,rx:28,ry:16,mm:9,type:'target',src:'vta',pw:'meso_l',d1:1,d2:1,
+    role:'The main part of the ventral striatum. It integrates dopamine signals about reward and motivation and is the main site of the rewarding effects of stimulants and other addictive drugs.',
+    rec:'Mixed D1 and D2 neurons, as in the rest of the striatum.'},
+  olf:{name:'Olfactory tubercle',short:'Olf. tub.',cx:232,cy:312,rx:28,ry:11,mm:10,type:'target',src:'vta',pw:'meso_l',d1:1,d2:1,
+    role:'Part of the ventral striatum on the underside of the brain. It is involved in reward and in linking odors to motivation.',
+    rec:'Mixed D1 and D2 neurons.'},
+  amy:{name:'Amygdala',short:'Amygdala',cx:372,cy:328,rx:32,ry:14,mm:22,type:'target',src:'vta',pw:'meso_l',d1:1,d2:0.6,
+    role:'A temporal lobe structure for emotional learning. Dopamine here helps link cues to rewarding or threatening outcomes.',
+    rec:'Both D1 and D2 receptor families.'},
+  hip:{name:'Hippocampus',short:'Hippocampus',cx:452,cy:334,rx:42,ry:13,mm:28,type:'target',src:'vta',pw:'meso_l',d1:1,d2:0.3,
+    role:'A memory structure in the temporal lobe. Dopamine signals about novelty and reward help stabilize new memories.',
+    rec:'Mainly D1-like receptors (D1 and D5).'},
+  mpfc:{name:'Medial prefrontal cortex',short:'mPFC',cx:175,cy:215,rx:42,ry:30,mm:4,type:'target',src:'vta',pw:'meso_c',d1:1,d2:0.4,
+    role:'Cortex on the inner surface of the frontal lobe. It supports decision-making and emotional regulation. Low dopamine here is part of the classic schizophrenia hypothesis.',
+    rec:'D1 receptors outnumber D2 receptors in cortex.'},
+  dlpfc:{name:'Dorsolateral prefrontal cortex',short:'dlPFC',cx:225,cy:140,rx:45,ry:26,mm:35,type:'target',src:'vta',pw:'meso_c',d1:1,d2:0.4,
+    role:'Cortex on the outer surface of the frontal lobe, far from the midline. It is central to working memory, which follows an inverted U with dopamine level.',
+    rec:'D1 receptors dominate.'},
+  caud:{name:'Caudate',short:'Caudate',cx:330,cy:205,rx:44,ry:20,mm:15,type:'target',src:'snc',pw:'nigro',d1:1,d2:1,
+    role:'Dorsal striatum, much of it associative, meaning closely linked with prefrontal cortex. PET studies find excess dopamine synthesis here in schizophrenia.',
+    rec:'D1 neurons form the direct pathway and D2 neurons the indirect pathway.'},
+  put:{name:'Putamen',short:'Putamen',cx:365,cy:250,rx:40,ry:20,mm:25,type:'target',src:'snc',pw:'nigro',d1:1,d2:1,
+    role:'The motor part of the dorsal striatum. It loses dopamine earliest and most in Parkinson\'s disease.',
+    rec:'D1 neurons form the direct pathway and D2 neurons the indirect pathway.'},
+  pit:{name:'Anterior pituitary',short:'Pituitary',cx:312,cy:382,rx:14,ry:9,mm:0,type:'target',src:'arc',pw:'tubero',d1:0,d2:1,
+    role:'Its lactotroph cells release prolactin unless dopamine holds them back. It sits below the brain, connected by the pituitary stalk.',
+    rec:'D2 receptors only.'}
+};
+
+const SEG=[
+  {pw:'meso_l',from:'vta',to:'nac',c:[360,285]},
+  {pw:'meso_l',from:'vta',to:'olf',c:[340,300]},
+  {pw:'meso_l',from:'vta',to:'amy',c:[415,330]},
+  {pw:'meso_l',from:'vta',to:'hip',c:[470,318]},
+  {pw:'meso_c',from:'vta',to:'mpfc',c:[380,90]},
+  {pw:'meso_c',from:'vta',to:'dlpfc',c:[390,80]},
+  {pw:'nigro',from:'snc',to:'caud',c:[440,190]},
+  {pw:'nigro',from:'snc',to:'put',c:[440,235]},
+  {pw:'tubero',from:'arc',to:'pit',c:[325,345]}
+];
+
+const DRUGS=[
+  {key:'d2block',name:'Typical antipsychotic',where:'Blocks D2 receptors tightly in every target region.',pct:v=>Math.round(v*100)+'% of D2 receptors occupied'},
+  {key:'ht2a',name:'Atypical antipsychotic',where:'Blocks D2 receptors more loosely in every target region (about 70% occupied), and blocks serotonin 5-HT2A receptors, which lets more dopamine be released in the putamen and prefrontal cortex.'},
+  {key:'d2ago',name:'D2 agonist',where:'Stimulates D2 receptors directly in every region that has them, without needing dopamine.'},
+  {key:'reuptake',name:'Reuptake blocker',where:'Blocks dopamine transporters at axon terminals in every target, so released dopamine lingers.'},
+  {key:'amph',name:'Dopamine releaser',where:'Reverses transporters at axon terminals in every target, pushing dopamine out without firing.'},
+  {key:'ldopa',name:'L-DOPA',where:'Extra raw material that axon terminals in every target convert into dopamine.'},
+  {key:'maob',name:'MAO-B inhibitor',where:'Slows the breakdown of dopamine in every target region.'}
+];
+const slowFor=e=>[[e,e+1.75,0.35],[e+1.75,e+2.4,0.07]];
+const burst=(t,starts,len,hz)=>starts.some(s=>t>=s&&t<s+len)?hz:null;
+const SZ={caud:1.7,nac:1.6,olf:1.4,mpfc:0.45,dlpfc:0.45};
+
+const SCEN=[
+  {id:'baseline',group:'Normal signaling',name:'Baseline: tonic firing',dur:8,loop:true,captions:[
+    [0,'All four pathways fire tonically: a slow, regular pacemaker rhythm of a few spikes per second. Each moving dot is a spike traveling down an axon, and each target holds a steady background level of dopamine.'],
+    [4,'Click any region to pause and read about its role, its receptors and how far it sits from the midline.']]},
+  {id:'rpe',group:'Normal signaling',name:'Reward prediction error',dur:16.5,base:1,minRead:3.5,
+    fire:t=>{const b=burst(t,[1,4.5,9.5],0.25,25);if(b!=null)return{vta:b};if(t>=12&&t<12.45)return{vta:0};return{};},
+    events:[[1,'Reward'],[4.5,'Cue'],[7,'Reward'],[9.5,'Cue'],[12,'No reward']],
+    slow:[...slowFor(1),...slowFor(4.5),...slowFor(9.5),...slowFor(12)],
+    captions:[
+    [0,'Trial 1, before learning: nothing predicts the reward yet.'],
+    [1,'An unexpected reward arrives. VTA neurons fire a burst of spikes; watch it travel down the pathways. When it arrives, dopamine signaling rises in the targets (green). The outcome was better than predicted: a positive prediction error.'],
+    [3.5,'Trial 2, after many trials in which a cue always came before the reward.'],
+    [4.5,'Now the burst happens at the cue, and the targets light up green when it arrives. The cue has become the earliest sign that a reward is coming.'],
+    [7,'The expected reward arrives, and nothing changes. The outcome matched the prediction, so the prediction error is zero.'],
+    [8.5,'Trial 3, after learning.'],
+    [9.5,'The cue triggers its learned burst.'],
+    [12,'The expected reward is withheld. VTA firing pauses; watch the gap in the spikes travel down the pathways. When it arrives, dopamine signaling dips in the targets (orange-red). The outcome was worse than predicted: a negative prediction error.'],
+    [14.8,'Prediction error is the leading account of these signals, not the only one. Novelty, salience and aversive events also move dopamine neurons, and other theories stress "wanting" or different learning rules.']]},
+  {id:'wm',group:'Normal signaling',name:'Working memory and the inverted U',dur:12,
+    state:t=>{const v=0.15+0.1545*t;return{override:{mpfc:v,dlpfc:v}};},captions:[
+    [0,'In this scenario, prefrontal dopamine is set directly and raised steadily. It starts very low, and working memory, shown in the Effects panel, is poor.'],
+    [3.5,'As dopamine rises toward the middle of the range, working memory improves, mostly through D1 receptors in prefrontal cortex.'],
+    [5.5,'At a middle level of dopamine, performance is best.'],
+    [7.5,'Beyond the peak, more dopamine makes performance worse again. This inverted U appears in both animal and human studies.'],
+    [10,'This is one reason the same drug or dose can help one person\'s working memory and impair another\'s, depending on where they start on this inverted U.']]},
+  {id:'pd',group:'Parkinson\'s disease',name:'Parkinson\'s disease progression',dur:12,
+    state:t=>({health:{snc:1-0.8*t/12}}),clock:t=>Math.round(80*t/12)+'% of SNc neurons lost (years compressed into seconds)',captions:[
+    [0,'A healthy nigrostriatal pathway. The clock now tracks neuron loss, which in reality unfolds over many years.'],
+    [2.5,'Early loss produces no motor symptoms, because surviving neurons release extra dopamine to compensate. Movement drive holds steady for now.'],
+    [5,'Fewer spikes reach the dorsal striatum. The putamen, its motor part, loses dopamine first and most; the caudate is affected later and less.'],
+    [7,'Compensation runs out. Motor symptoms usually appear only after a large share of putamen dopamine is gone; estimates vary, often around 50 to 80 percent.'],
+    [9,'In the motor loop, weak D1 signaling weakens the direct "go" pathway and weak D2 signaling releases the indirect "no-go" pathway. The output nuclei overinhibit the thalamus, so movement becomes slow and hard to start.'],
+    [11,'The VTA pathways are relatively spared here, though Parkinson\'s disease affects many systems beyond dopamine.']]},
+  {id:'pd-ldopa',group:'Parkinson\'s disease',name:'Treatment: L-DOPA',dur:10,
+    state:t=>({health:{snc:0.25},ldopa:ramp(t,2,5,0,1)}),captions:[
+    [0,'Advanced Parkinson\'s disease: about three quarters of SNc neurons are lost, and striatal dopamine is low.'],
+    [2,'L-DOPA is given. Unlike dopamine, it crosses the blood-brain barrier. It is usually combined with carbidopa, which stops it from being converted before it reaches the brain.'],
+    [4.5,'Surviving dopamine neurons and other cells in the striatum convert L-DOPA into dopamine. Striatal dopamine rises and movement drive recovers.'],
+    [7.5,'L-DOPA also raises dopamine in VTA targets. Over years, as more neurons are lost, its effect becomes shorter and less steady, and many people develop involuntary movements called L-DOPA-induced dyskinesias, which are distinct from the tardive dyskinesia caused by antipsychotics.']]},
+  {id:'pd-ago',group:'Parkinson\'s disease',name:'Treatment: dopamine agonist',dur:10,
+    state:t=>({health:{snc:0.25},d2ago:ramp(t,2,5,0,0.8)}),captions:[
+    [0,'Advanced Parkinson\'s disease, as in the L-DOPA scenario.'],
+    [2,'A dopamine agonist such as pramipexole or ropinirole is given. It acts directly on D2-like receptors, so it does not depend on the lost neurons.'],
+    [5,'The nigrostriatal lines stay thin because little dopamine is released, but D2 signaling in the striatum rises because the drug acts on receptors directly. Movement drive improves, though less than with L-DOPA, because the D1 direct pathway stays weak.'],
+    [8,'Agonists also stimulate mesolimbic D2 receptors, which is linked to side effects such as compulsive gambling or shopping. They lower prolactin too.']]},
+  {id:'pd-maob',group:'Parkinson\'s disease',name:'Treatment: MAO-B inhibitor',dur:8,
+    state:t=>({health:{snc:0.25},maob:ramp(t,2,5,0,1)}),captions:[
+    [0,'Advanced Parkinson\'s disease.'],
+    [2,'An MAO-B inhibitor such as selegiline or rasagiline slows the breakdown of dopamine.'],
+    [5,'Dopamine rises only modestly, so these drugs are mainly used early in the disease or added to L-DOPA.']]},
+  {id:'scz-classic',group:'Schizophrenia',name:'Classic dopamine hypothesis',dur:10,loops:['cog'],
+    state:t=>({synth:{nac:ramp(t,1,4,1,1.9),olf:ramp(t,1,4,1,1.6),mpfc:ramp(t,1,4,1,0.45),dlpfc:ramp(t,1,4,1,0.45)}}),captions:[
+    [0,'The classic dopamine hypothesis proposes too much dopamine in the mesolimbic pathway and too little in the mesocortical pathway.'],
+    [4.5,'Excess mesolimbic dopamine is linked to positive symptoms such as hallucinations and delusions. Low mesocortical dopamine is linked to negative symptoms, like reduced motivation, and to cognitive symptoms. Check the working memory bar in the Effects panel.'],
+    [8,'This version is still widely taught. The thinking loop beside the brain stays balanced, because the classic hypothesis says nothing about the caudate. The next scenario shows how brain imaging has refined it.']]},
+  {id:'scz-modern',group:'Schizophrenia',name:'Modern refinement from PET imaging',dur:10,loops:['cog'],
+    state:t=>({synth:{caud:ramp(t,1,4,1,1.7),nac:ramp(t,1,4,1,1.15)}}),captions:[
+    [0,'PET imaging since the 2000s finds the largest increase in dopamine synthesis and release in the dorsal striatum, especially its associative part, represented here by the caudate.'],
+    [4.5,'The increase is present in people at high risk of psychosis and grows as symptoms emerge. The limbic striatum, including the nucleus accumbens, shows a smaller change.'],
+    [7.5,'Because the associative striatum works closely with prefrontal cortex, this refinement links the dopamine excess to circuits for thinking and belief, not only reward. In the thinking loop, the go pathway strengthens and the no-go pathway weakens, so the loop passes signals too easily.']]},
+  {id:'ap-typical',group:'Drugs',name:'Typical antipsychotics',dur:15.5,loops:['cog','motor'],
+    state:t=>({synth:SZ,d2block:ramp(t,2,6,0,0.82)}),captions:[
+    [0,'Starting state: too much dopamine in the mesolimbic pathway and the caudate, and too little in prefrontal cortex, combining the classic hypothesis with the PET finding. The thinking loop through the caudate is overactive.'],
+    [2,'A typical antipsychotic is given. It reaches D2 receptors in all four pathways at once; pink rings mark where it acts.'],
+    [4.5,'What sets typical (first-generation) antipsychotics apart, such as haloperidol and chlorpromazine: they treat psychosis almost entirely by blocking D2 receptors, which they bind tightly, often above 80 percent occupancy. This model uses 82 percent. Many also block histamine, acetylcholine and alpha-1 receptors, causing sedation, dry mouth and dizziness.'],
+    [7,'Caudate and mesolimbic pathway: blocking D2 signaling brings the thinking loop back toward balance and reduces positive symptoms. Therapeutic effects usually appear at about 60 to 80 percent occupancy.'],
+    [9.5,'Putamen: above about 80 percent occupancy, the indirect pathway is released and movement drive falls, causing parkinsonism: stiffness, slowness and tremor.'],
+    [11.5,'Motor side effects appear on different timescales: acute dystonia (sudden muscle spasms, such as a twisted neck) within hours to days, parkinsonism and akathisia (an intense inner restlessness) within days to weeks, and tardive dyskinesia after months to years. Tardive dyskinesia has its own scenario.'],
+    [13.5,'Pituitary: prolactin rises sharply. Prefrontal cortex: low dopamine is not restored, so negative and cognitive symptoms improve little.']]},
+  {id:'ap-atypical',group:'Drugs',name:'Atypical antipsychotics',dur:15.5,loops:['cog','motor'],
+    state:t=>({synth:SZ,d2block:ramp(t,2,6,0,0.7),ht2a:ramp(t,2,6,0,1)}),captions:[
+    [0,'Starting state: too much dopamine in the mesolimbic pathway and the caudate, and too little in prefrontal cortex, as in the typical antipsychotic scenario. The thinking loop through the caudate is overactive.'],
+    [2,'An atypical antipsychotic is given. Pink rings mark where it acts.'],
+    [4.5,'What sets atypical (second-generation) antipsychotics apart, such as risperidone, olanzapine, quetiapine and clozapine: alongside D2 blockade, they strongly block serotonin 5-HT2A receptors, which lets more dopamine be released in the putamen and prefrontal cortex. Some, such as clozapine and quetiapine, also bind D2 loosely. This model uses 70 percent D2 occupancy.'],
+    [7.5,'Caudate and mesolimbic pathway: D2 blockade still brings the thinking loop back toward balance and reduces positive symptoms.'],
+    [9.5,'Putamen: occupancy stays below the motor threshold and the extra dopamine offsets the blockade, so movement drive barely falls and motor side effects are less common on average. Prefrontal dopamine also rises slightly; any benefit for negative symptoms is modest and debated.'],
+    [11.5,'Motor side effects are rarer with atypicals but not absent. The most noticeable is often akathisia, an intense inner restlessness, especially with lurasidone and aripiprazole (a D2 partial agonist, not simulated here). Its cause is unclear; the fact that the beta blocker propranolol often helps points to a role for noradrenaline. Tardive dyskinesia is less likely, but possible.'],
+    [13.5,'Prolactin rises less with most atypicals, though risperidone is an exception. Their main drawbacks are metabolic, such as weight gain and diabetes risk, especially with olanzapine and clozapine. Clozapine is also the most effective option when other antipsychotics have failed.']]},
+  {id:'td',group:'Drugs',name:'Tardive dyskinesia (long-term D2 blockade)',dur:13,
+    state:t=>({d2block:ramp(t,7,9,0.9,0.5),d2sens:ramp(t,1.5,5,1,3)}),captions:[
+    [0,'Years of treatment with a high dose of a typical antipsychotic, which blocks most D2 receptors. Movement drive is reduced.'],
+    [1.5,'Over months to years, striatal neurons adapt to the blockade by making more D2 receptors and becoming more sensitive to dopamine. This is called D2 receptor supersensitivity, and the time is compressed here.'],
+    [5,'While the dose stays high, the blockade hides most of this change, and movement drive stays below typical.'],
+    [7,'The dose is lowered. With fewer receptors blocked, the extra, supersensitive receptors respond strongly. The indirect "no-go" pathway in the putamen is over-suppressed, so the brake on movement fails and movement drive overshoots.'],
+    [9,'D2 supersensitivity is the leading explanation for tardive dyskinesia, which causes involuntary, repetitive movements, most often of the mouth, tongue and face, such as lip smacking, chewing and tongue thrusting. It often appears or worsens when an antipsychotic is reduced or stopped, and it can persist for years or permanently.'],
+    [11,'Supersensitivity is not the whole story; oxidative damage and lasting changes in striatal circuits are also thought to contribute. Treatment includes VMAT2 inhibitors such as valbenazine and deutetrabenazine, which reduce dopamine release.']]},
+  {id:'reuptake',group:'Drugs',name:'Reuptake blockers (cocaine, methylphenidate)',dur:11,slow:slowFor(7),
+    state:t=>({reuptake:ramp(t,2,4,0,1)}),fire:t=>{const b=burst(t,[7],0.25,25);return b!=null?{vta:b}:{};},
+    events:[[7,'Burst']],captions:[
+    [0,'The drug blocks the dopamine transporter, which normally clears dopamine back into the neuron. Firing does not change, but dopamine lingers and builds up.'],
+    [4.5,'The rise is largest in the striatum and nucleus accumbens, where transporters are dense. In prefrontal cortex, dopamine is cleared partly by the norepinephrine transporter, which these drugs also block.'],
+    [7,'A phasic burst now fires. When it arrives, it produces an exaggerated dopamine signal in the nucleus accumbens, part of why these drugs are rewarding.'],
+    [9.5,'Cocaine and methylphenidate share this mechanism but differ in how fast they reach the brain and how they are taken, which strongly affects their potential for addiction.']]},
+  {id:'amph',group:'Drugs',name:'Dopamine releasers (amphetamine)',dur:10,
+    state:t=>({amph:ramp(t,2,4,0,1)}),fire:t=>{const k=1-0.6*ramp(t,2,4,0,1);return{vta:4*k,snc:4*k};},captions:[
+    [0,'Amphetamine enters dopamine neurons and reverses the transporter, pushing dopamine out whether or not the neuron fires.'],
+    [4.5,'Firing actually slows, because D2 autoreceptors sense the extra dopamine, yet dopamine in the targets keeps rising. Compare the sparser spikes and thinning pathway lines with the rising signaling in the targets.'],
+    [7.5,'Because release no longer depends on firing, the normal timing of phasic signals is swamped.']]},
+  {id:'prolactin',group:'Drugs',name:'Prolactin and D2 agonists',dur:12,
+    state:t=>({delivery:ramp(t,1.5,3.5,1,0.25),d2ago:ramp(t,7,9,0,1.2),agoBrain:0.2}),captions:[
+    [0,'Tuberoinfundibular dopamine steadily holds back prolactin release from the pituitary.'],
+    [1.5,'Less dopamine now reaches the pituitary, for example when a tumor presses on the pituitary stalk. Prolactin rises.'],
+    [5,'High prolactin can cause milk production, irregular periods and reduced fertility.'],
+    [7,'A D2 agonist such as cabergoline or bromocriptine is given. It stands in for dopamine at pituitary D2 receptors, and prolactin falls.'],
+    [10,'Dopamine agonists are the standard first treatment for most prolactin-secreting tumors. The drug also reaches brain D2 receptors, but at the low doses used for prolactin the effect there is small; nausea and dizziness are its most common side effects.']]}
+];
+
+const layers={labels:true,motor:true};
+let focusPw=null;
+let scen=SCEN[0],t=0,playing=false,last=null,spikes={};
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let C={};
+function hex(h){h=h.replace('#','');return[0,2,4].map(i=>parseInt(h.substr(i,2),16));}
+function readColors(){const cs=getComputedStyle(document.documentElement);['up','down','tissue','ink2'].forEach(k=>C[k]=hex(cs.getPropertyValue('--'+k).trim()));}
+function mixRGB(a,b,f){return a.map((v,i)=>Math.round(v+(b[i]-v)*f));}
+function daRGB(v){return v<1?mixRGB(C.tissue,C.down,Math.pow(clamp((1-v)/0.7,0,1),0.7)):mixRGB(C.tissue,C.up,Math.pow(clamp((v-1)/1.2,0,1),0.7));}
+function textFor(rgb){const L=(0.2126*rgb[0]+0.7152*rgb[1]+0.0722*rgb[2])/255;return L>0.55?'#1C2633':'#F2F4F7';}
+const dashFor=mm=>mm<5?'none':mm<15?'6 4':'1.5 4';
+const depthWord=mm=>mm<5?'at or near the midline':mm<15?'near the midline':'lateral';
+
+function stateAt(tt){
+  const s=Object.assign({ldopa:0,maob:0,ht2a:0,d2sens:1,agoBrain:1,reuptake:0,amph:0,d2block:0,d2ago:0,delivery:1,synth:{},override:{}},scen.state?scen.state(Math.max(0,tt)):{});
+  s.health=Object.assign({vta:1,snc:1,arc:1},s.health||{});
+  return s;
+}
+function rateAt(src,tt){
+  if(tt<0||!scen.fire)return TONIC[src];
+  const f=scen.fire(tt);return f[src]!=null?f[src]:TONIC[src];
+}
+function avgRate(src,tt){let a=0;for(let i=0;i<4;i++)a+=rateAt(src,tt-i*0.04);return a/4;}
+
+function reserve(b){return b<=0.7?b*0.25:0.175+(b-0.7)/0.3*0.825;}
+function compute(tt){
+  const st=stateAt(tt),out={src:{},da:{},d1:{},d2:{},axon:{},act:{}};
+  const rf={};
+  SOURCES.forEach(s=>{out.src[s]=st.health[s]*avgRate(s,tt)/TONIC[s];rf[s]=avgRate(s,tt-TRAVEL)/TONIC[s];});
+  for(const id in REG){
+    const r=REG[id];if(r.type!=='target')continue;
+    const pfc=id==='mpfc'||id==='dlpfc',s=r.src;
+    let h=st.health[s];
+    if(s==='snc')h=Math.min(1,1.8*Math.pow(h,id==='put'?1.25:0.85));
+    let da;
+    if(st.override[id]!=null)da=st.override[id];
+    else{
+      const synth=(1+st.ldopa*(s==='snc'?2.0:0.35))*(st.synth[id]!=null?st.synth[id]:1);
+      const brk=1+0.35*st.maob,reup=1+st.reuptake*(pfc?0.4:1.6);
+      da=h*rf[s]*synth*brk*reup+st.amph*h*(pfc?0.8:1.7);
+      if(id==='dlpfc')out.dlParts=[h*synth*brk*reup,st.amph*h*0.8];
+      if(id==='pit')da*=st.delivery;
+      if(st.ht2a&&(id==='put'||pfc))da*=1+(pfc?0.35:0.15)*st.ht2a;
+    }
+    out.da[id]=da;
+    out.d1[id]=r.d1>0?da:0;
+    const sens=(id==='put'||id==='caud'||id==='nac'||id==='olf')?st.d2sens:1;
+    const blk=id==='put'?reserve(st.d2block):st.d2block,ago=id==='pit'?st.d2ago:st.d2ago*st.agoBrain;
+    out.d2[id]=r.d2>0?Math.max(0,da*(1-blk)*sens+ago):0;
+    out.axon[id]=st.override[id]!=null?st.override[id]:h*rf[s]*(st.synth[id]!=null?st.synth[id]:1)*(id==='pit'?st.delivery:1);
+    out.act[id]=(r.d1*out.d1[id]+r.d2*out.d2[id])/(r.d1+r.d2);
+  }
+  out.motor=loopVals(out,'put');
+  let lr=0;for(let i=0;i<40;i++)lr+=clamp(rateAt('vta',tt-i*0.05)/TONIC.vta,0.6,1.4);lr=lr/40;
+  out.wmX=st.override.dlpfc!=null?out.da.dlpfc:out.dlParts[0]*lr+out.dlParts[1];
+  out.wm=Math.exp(-Math.pow(out.wmX-1,2)/(2*0.45*0.45));
+  out.prl=1/(0.2+0.8*out.d2.pit);
+  out.drug=null;
+  DRUGS.forEach(d=>{if(st[d.key]>0.02&&(!out.drug||st[d.key]>out.drug.v))out.drug={d,v:st[d.key]};});
+  return out;
+}
+
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296;};}
+function makeSpikes(){
+  let seed=0;for(const ch of scen.id)seed=(seed*31+ch.charCodeAt(0))|0;
+  const rnd=mulberry(seed),out={},dt=0.004;
+  SOURCES.forEach(s=>{out[s]=[];let phase=rnd();let next=1;
+    for(let tt=-2.2;tt<scen.dur;tt+=dt){
+      const st=stateAt(tt);phase+=rateAt(s,tt)*st.health[s]*dt;
+      if(phase>=next){out[s].push(tt);phase-=next;next=0.85+0.3*rnd();}
+    }});
+  return out;
+}
+function lowerBound(arr,v){let lo=0,hi=arr.length;while(lo<hi){const m=(lo+hi)>>1;if(arr[m]<v)lo=m+1;else hi=m;}return lo;}
+
+const brain=$('brain'),gPaths=$('paths'),gPulses=$('pulses'),gRegions=$('regions'),gHalo=$('halos');
+SEG.forEach(s=>{
+  const a=REG[s.from],b=REG[s.to];
+  s.d=`M${a.cx} ${a.cy} Q${s.c[0]} ${s.c[1]} ${b.cx} ${b.cy}`;
+  const g=el('g',{'data-pw':s.pw},gPaths);
+  s.el=el('path',{d:s.d,class:'pw'},g);
+  const hit=el('path',{d:s.d,class:'pwhit'},g);
+  hit.addEventListener('click',()=>setFocus(s.pw));
+  s.pts=[];for(let i=0;i<=60;i++){const u=i/60,v=1-u;s.pts.push([v*v*a.cx+2*v*u*s.c[0]+u*u*b.cx,v*v*a.cy+2*v*u*s.c[1]+u*u*b.cy]);}
+  s.g=el('g',{'data-pw':s.pw},gPulses);s.pool=[];
+});
+for(const id in REG){
+  const r=REG[id];
+  const g=el('g',{class:'reg',tabindex:'0',role:'button','aria-label':r.name},gRegions);
+  r.g=g;
+  r.shape=el('ellipse',{cx:r.cx,cy:r.cy,rx:r.rx,ry:r.ry,class:'rshape '+r.type,'stroke-dasharray':dashFor(r.mm),'fill-opacity':r.mm<5?1:r.mm<15?0.9:0.8},g);
+  if(id==='pit'){r.label=el('text',{x:r.cx-20,y:r.cy,class:'rl','text-anchor':'end','dominant-baseline':'central'},g);r.outside=true;}
+  else r.label=el('text',{x:r.cx,y:r.cy,class:'rl','text-anchor':'middle','dominant-baseline':'central'},g);
+  r.label.textContent=r.short;
+  g.addEventListener('click',()=>openRegion(id));
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRegion(id);}});
+  if(r.type==='target')r.halo=el('ellipse',{cx:r.cx,cy:r.cy,rx:r.rx+5,ry:r.ry+5,class:'halo',opacity:'0'},gHalo);
+
+}
+
+const LOOPS={
+  motor:{svg:'motor',fig:'motorfig',sum:'motorSum',reg:'put',src:'SNc to putamen',cells:'putamen',nuc:'VL / VA',out:['to motor','cortex'],
+    go:'Direct pathway: releases the thalamus ("go")',nogo:'Indirect pathway: brakes the thalamus ("no-go")',
+    low:'The output nuclei hold the thalamus back, so movement is reduced.',high:'The thalamus is released, so movement drive is increased.',mid:'The two pathways are balanced, so movement drive is typical.'},
+  cog:{svg:'cog',fig:'cogfig',sum:'cogSum',reg:'caud',src:'SNc to caudate',cells:'caudate',nuc:'VA / MD',out:['to prefrontal','cortex'],
+    go:'Direct pathway: lets a thought or plan through ("go")',nogo:'Indirect pathway: holds competing ones back ("no-go")',
+    low:'The output nuclei hold the thalamus back, so less is passed on to prefrontal cortex.',high:'The thalamus is released, so the loop passes signals to prefrontal cortex too easily. This is one proposed link to giving too much importance to ideas and perceptions.',mid:'The two pathways are balanced, so the loop works as usual.'}
+};
+function buildLoop(key){
+  const L=LOOPS[key],svg=$(L.svg),N={};
+  const defs=el('defs',{},svg);
+  const ma=el('marker',{id:key+'Arrow',viewBox:'0 0 10 10',refX:'8',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto-start-reverse'},defs);
+  el('path',{d:'M2 1L8 5L2 9',fill:'none',style:'stroke:var(--ink2)','stroke-width':'1.6','stroke-linecap':'round','stroke-linejoin':'round'},ma);
+  const mb=el('marker',{id:key+'Bar',viewBox:'0 0 10 10',refX:'5',refY:'5',markerWidth:'8',markerHeight:'8',orient:'auto'},defs);
+  el('line',{x1:'5',y1:'0',x2:'5',y2:'10',style:'stroke:var(--ink2)','stroke-width':'2'},mb);
+  const lab=(x,y,txt,cls,anchor)=>{const e=el('text',{x,y,class:cls,'text-anchor':anchor||'middle'},svg);e.textContent=txt;return e;};
+  lab(290,40,L.go,'rowlab');lab(290,292,L.nogo,'rowlab');
+  const conn=(d,m)=>el('path',{d,class:'conn','marker-end':`url(#${key}${m})`},svg);
+  conn('M108 134 L134 100','Arrow');conn('M108 158 L134 202','Bar');conn('M242 84 H416 V114','Bar');
+  conn('M242 234 H264','Bar');conn('M344 234 H366','Bar');conn('M416 206 V180','Arrow');conn('M466 146 H484','Bar');
+  lab(118,100,'excites','ms','end');lab(118,200,'inhibits','ms','end');
+  L.out.forEach((ln,i)=>lab(531,196+i*16,ln,'ms'));
+  [['da',8,118,100,56,'Dopamine',L.src],['d1',138,56,104,56,'D1 cells',L.cells],['d2',138,206,104,56,'D2 cells',L.cells],
+   ['gpe',268,206,76,56,'GPe','pallidum'],['stn',370,206,92,56,'STN','subthalamus'],['gpi',366,118,100,56,'GPi / SNr','output'],
+   ['thal',488,114,86,64,'Thalamus',L.nuc]].forEach(([id,x,y,w,h,t1,t2])=>{
+    const r=el('rect',{x,y,width:w,height:h,rx:6,class:'mbox'},svg);
+    const a=el('text',{x:x+w/2,y:y+h/2-9,class:'mt','text-anchor':'middle','dominant-baseline':'central'},svg);a.textContent=t1;
+    const b=el('text',{x:x+w/2,y:y+h/2+11,class:'ms','text-anchor':'middle','dominant-baseline':'central'},svg);b.textContent=t2;
+    N[id]={r,a,b,c:null};});
+  L.N=N;
+}
+buildLoop('motor');buildLoop('cog');
+function loopVals(o,reg){
+  const direct=o.d1[reg],indirect=1/(0.3+0.7*o.d2[reg]);
+  const gpi=clamp(1+0.5*(indirect-1)-0.5*(direct-1),0.15,3);
+  return {da:o.da[reg],d1:direct,d2:indirect,gpe:1/indirect,stn:indirect,gpi,thal:clamp(1/gpi,0,3),direct,indirect};
+}
+function updateLoops(o){
+  const lvl=v=>v>1.1?'stronger than typical':v<0.9?'weaker than typical':'typical';
+  const want=scen.loops||['motor'];
+  for(const key in LOOPS){
+    const L=LOOPS[key];$(L.fig).hidden=!layers.motor||!want.includes(key);
+    const v=loopVals(o,L.reg);
+    if($(L.fig).hidden)continue;
+    for(const k in L.N){const rgb=daRGB(v[k]);setFill(L.N[k].r,`rgb(${rgb.join(',')})`);const tc=textFor(rgb);setFill(L.N[k].a,tc);setFill(L.N[k].b,tc);if(L.N[k].c)setFill(L.N[k].c,tc);}
+    const sum='Go pathway '+lvl(v.direct)+', no-go pathway '+lvl(v.indirect)+'. '+(v.thal<0.9?L.low:v.thal>1.1?L.high:L.mid);
+    setText($(L.sum),sum);
+  }
+}
+
+
+let lastOut=null,dlgId=null,wasPlaying=false;
+const dlg=$('regionDlg');
+function openRegion(id){
+  const r=REG[id];dlgId=id;wasPlaying=playing;setPlaying(false);
+  $('dlgName').textContent=r.name;
+  $('dlgMeta').textContent=(r.type==='source'?'Dopamine source':'Target region')+', '+depthWord(r.mm)+(r.mm>=5?', about '+r.mm+' mm from the midline':'')+'.';
+  $('dlgRole').textContent=r.role;$('dlgRec').textContent='Receptors: '+r.rec;
+  const pws=r.type==='source'?r.pws:[r.pw];
+  $('dlgPw').innerHTML='';
+  pws.forEach(k=>{const d=document.createElement('p');d.className='pwinfo';const b=document.createElement('b');b.textContent=r.type==='source'?'Source of: ':'Part of: ';d.append(b,'the '+PW[k].name.toLowerCase()+', a major pathway that '+PW[k].role);$('dlgPw').appendChild(d);});
+  updateReading(lastOut);
+  dlg.showModal();
+}
+function closeRegion(){dlg.close();}
+dlg.addEventListener('close',()=>{dlgId=null;if(wasPlaying)setPlaying(true);});
+dlg.addEventListener('click',e=>{if(e.target===dlg){const b=dlg.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)closeRegion();}});
+$('dlgClose').addEventListener('click',closeRegion);
+function updateReading(o){
+  if(!o||!dlgId)return;
+  const f=v=>v.toFixed(1)+'×',id=dlgId,r=REG[id];let txt;
+  if(r.type==='source')txt='Right now: population firing is '+f(o.src[id])+' tonic baseline.';
+  else txt='Right now: dopamine signaling is '+f(o.act[id])+' baseline. The pathway delivers '+f(o.axon[id])+' baseline, the dopamine level after drug effects is '+f(o.da[id])+', D1 signaling is '+(r.d1?f(o.d1[id]):'none')+' and D2 signaling is '+f(o.d2[id])+'.';
+  setText($('dlgReading'),txt);
+}
+
+let lastDrug=null,lastEv=null;
+const domCache=new WeakMap();
+function setText(e,v){if(domCache.get(e)!==v){domCache.set(e,v);e.textContent=v;}}
+function setFill(e,v){const k='f';const c=domCache.get(e)||{};if(c[k]!==v){c[k]=v;domCache.set(e,c);e.style.fill=v;}}
+function setBar(id,v,max){const e=$(id),w=clamp(v/max*100,0,100).toFixed(1)+'%';if(domCache.get(e)!==w){domCache.set(e,w);e.style.width=w;}}
+function render(){
+  const o=compute(t);lastOut=o;
+  for(const id in REG){
+    const r=REG[id],v=r.type==='source'?o.src[id]:o.act[id],rgb=daRGB(v);
+    setFill(r.shape,`rgb(${rgb.join(',')})`);
+    setFill(r.label,r.outside?'var(--ink)':textFor(rgb));
+    const dimF=r.dimmed?0.22:1;
+    if(r.halo)r.halo.setAttribute('opacity',o.drug?(clamp(o.drug.v,0.25,1)*dimF).toFixed(2):0);
+  }
+  const dk=o.drug?o.drug.d.key+Math.round(o.drug.v*20):'';
+  if(dk!==lastDrug){lastDrug=dk;$('drugTag').hidden=!o.drug;
+    if(o.drug){const d=o.drug.d;$('drugText').innerHTML='<b>Drug acting: '+d.name+'</b>'+(d.pct?' ('+d.pct(o.drug.v)+')':'')+'. '+d.where;}}
+  SEG.forEach(s=>{
+    let n=0;const av=o.axon[s.to];
+    s.el.setAttribute('stroke-width',(1.4*clamp(av,0.35,4)).toFixed(2));
+    s.el.style.stroke='var(--ink2)';s.el.setAttribute('opacity',(av<1?0.3+0.6*clamp(av,0,1):0.9).toFixed(2));
+    if(!focusPw||focusPw===s.pw){
+      const list=spikes[s.from],op=clamp(0.35+0.3*o.da[s.to],0.35,1).toFixed(2);
+      for(let i=lowerBound(list,t-TRAVEL);i<list.length&&list[i]<=t;i++){
+        const p=s.pts[Math.min(60,Math.round((t-list[i])/TRAVEL*60))];
+        let c=s.pool[n];if(!c){c=el('circle',{r:2.2,class:'pulse'},s.g);s.pool.push(c);}
+        c.setAttribute('cx',p[0].toFixed(1));c.setAttribute('cy',p[1].toFixed(1));c.setAttribute('opacity',op);c.style.display='';n++;
+      }
+    }
+    for(let k=n;k<s.pool.length;k++)s.pool[k].style.display='none';
+  });
+  let ev='';if(scen.events)for(const [et,lab] of scen.events)if(t>=et&&t<et+1.2)ev=lab;
+  if(ev!==lastEv){lastEv=ev;$('eventTag').hidden=!ev;$('eventTag').textContent=ev;}
+  updateLoops(o);
+  setText($('vReward'),o.act.nac.toFixed(1)+'× baseline');setBar('bReward',o.act.nac,3);
+  setText($('vMove'),o.motor.thal.toFixed(1)+'× baseline');setBar('bMove',o.motor.thal,3);
+  setText($('vWM'),Math.round(o.wm*100)+'% of best');setBar('bWM',o.wm,1);
+  setText($('vPrl'),o.prl.toFixed(1)+'× baseline');setBar('bPrl',o.prl,3);
+  let ni=0;scen.captions.forEach(([ct],i)=>{if(ct<=t+1e-6)ni=i;});
+  if(ni!==curStep){curStep=ni;$('caption').textContent=scen.captions[ni][1];}
+  setText($('clock'),'Step '+(ni+1)+' of '+scen.captions.length+(scen.clock?'. '+scen.clock(t):''));
+  $('scrub').value=t;
+  updateReading(o);
+}
+
+function setPlaying(p){playing=p;$('play').textContent=p?'Pause':'Play';$('play').setAttribute('aria-label',p?'Pause scenario':'Play scenario');}
+let curStep=-1,segRate=[];
+function buildRates(){
+  const caps=scen.captions,base=scen.base||0.5,minR=scen.minRead||6,slow=scen.slow||[];
+  segRate=caps.map(([ct,c],i)=>{
+    const end=i+1<caps.length?caps[i+1][0]:scen.dur,L=end-ct;
+    let ov=0,slowReal=0;
+    slow.forEach(([a,b,r])=>{const o=Math.max(0,Math.min(b,end)-Math.max(a,ct));ov+=o;slowReal+=o/r;});
+    const rest=L-ov,need=Math.max(0,Math.max(minR,c.split(/\s+/).length/2.6)-slowReal);
+    return rest>0?Math.max(0.12,rest/Math.max(rest/base,need)):base;
+  });
+}
+function rateNow(){
+  if(scen.slow)for(const [a,b,r] of scen.slow)if(t>=a&&t<b)return r;
+  let k=0;scen.captions.forEach(([ct],i)=>{if(ct<=t+1e-6)k=i;});return segRate[k]||0.5;
+}
+function setFocus(pw,force){
+  focusPw=force?pw:(focusPw===pw?null:pw);
+  Object.keys(PW).forEach(k=>brain.classList.toggle('hide-'+k,!!focusPw&&k!==focusPw));
+  for(const id in REG){const r=REG[id],d=!!focusPw&&!PW[focusPw].ids.includes(id);r.g.classList.toggle('dim',d);r.dimmed=d;}
+  document.querySelectorAll('[data-focus]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.focus===focusPw?'true':'false'));
+  render();
+}
+function loadScenario(id,autoplay){
+  scen=SCEN.find(s=>s.id===id);t=0;spikes=makeSpikes();
+  curStep=-1;buildRates();$('scenario').value=id;
+  $('scrub').max=scen.dur;setPlaying(autoplay);render();
+}
+function frame(now){
+  if(last==null)last=now;const dt=Math.min(0.1,(now-last)/1000);last=now;
+  if(playing){t+=dt*rateNow();if(t>=scen.dur){if(scen.loop)t-=scen.dur;else{t=scen.dur;setPlaying(false);}}render();}
+  requestAnimationFrame(frame);
+}
+
+const sel=$('scenario');const groups={};
+SCEN.forEach(s=>{if(!groups[s.group]){groups[s.group]=document.createElement('optgroup');groups[s.group].label=s.group;sel.appendChild(groups[s.group]);}
+  const o=document.createElement('option');o.value=s.id;o.textContent=s.name;groups[s.group].appendChild(o);});
+sel.addEventListener('change',()=>loadScenario(sel.value,true));
+document.querySelectorAll('[data-focus]').forEach(b=>b.addEventListener('click',()=>setFocus(b.dataset.focus)));
+$('showAll').addEventListener('click',()=>setFocus(null,true));
+document.querySelectorAll('.pwl').forEach(l=>l.addEventListener('click',()=>setFocus(l.dataset.pw)));
+$('play').addEventListener('click',()=>{if(!playing&&t>=scen.dur)t=0;setPlaying(!playing);});
+$('restart').addEventListener('click',()=>{t=0;setPlaying(true);render();});
+$('scrub').addEventListener('input',e=>{t=parseFloat(e.target.value);render();});
+document.querySelectorAll('[data-layer]').forEach(cb=>cb.addEventListener('change',()=>{
+  const k=cb.dataset.layer;layers[k]=cb.checked;
+  if(k==='labels')brain.classList.toggle('nolabels',!cb.checked);
+  render();
+}));
+document.addEventListener('keydown',e=>{
+  if(e.key!==' '||dlg.open)return;const tag=(e.target.tagName||'').toLowerCase();
+  if(['input','select','button','textarea','summary'].includes(tag)||e.target.closest&&e.target.closest('.reg'))return;
+  e.preventDefault();$('play').click();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readColors();render();});
+
+readColors();
+loadScenario('baseline',!reduceMotion);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
